@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Little Mac Desktop</title>
+<style>
+*{box-sizing:border-box}
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:white}
+body{margin:0;overflow:hidden;background:#10234a}
+#desktop{height:100dvh;position:relative;overflow:hidden;background:radial-gradient(ellipse at 72% 78%,#e8a6c7 0%,transparent 30%),radial-gradient(ellipse at 25% 70%,#65b9d9 0%,transparent 38%),radial-gradient(ellipse at 60% 25%,#6d7ce2 0%,transparent 42%),linear-gradient(135deg,#07163d,#554b9d 55%,#e6a8c8)}
+#menubar{height:32px;background:#ffffff26;backdrop-filter:blur(30px);display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-size:13px;position:absolute;top:0;left:0;right:0;z-index:1000}
+#menubar span{margin-right:13px}
+#apps{position:absolute;top:55px;right:20px;display:grid;gap:22px;text-align:center}
+.appicon{width:76px;border:0;background:none;color:white;cursor:pointer;text-shadow:0 1px 5px #333;font-size:12px}
+.appicon .emoji{display:block;font-size:42px;margin-bottom:5px;filter:drop-shadow(0 5px 5px #0003)}
+#dock{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;align-items:end;gap:9px;padding:10px 13px;background:#ffffff40;border:1px solid #ffffff55;border-radius:23px;backdrop-filter:blur(35px);box-shadow:0 8px 30px #0003;max-width:95vw}
+.dockapp{border:0;background:none;font-size:34px;cursor:pointer;transition:transform .15s;padding:0;line-height:1}
+.dockapp:hover{transform:translateY(-9px) scale(1.17)}
+.window{position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);width:min(640px,90vw);height:min(430px,68vh);min-width:280px;background:#f7f7f9f2;color:#222;border:1px solid #ffffffa8;border-radius:13px;box-shadow:0 24px 80px #0005;overflow:hidden;resize:both;z-index:10}
+.titlebar{height:43px;display:flex;align-items:center;gap:8px;padding:0 13px;background:#ececf0d9;cursor:grab;user-select:none}
+.traffic{width:12px;height:12px;border-radius:50%;border:0;padding:0;cursor:pointer}
+.close{background:#ff6058}.min{background:#ffbd2e}.zoom{background:#28c840}
+.wintitle{flex:1;text-align:center;font-size:13px;font-weight:600;margin-right:44px}
+.content{padding:22px;height:calc(100% - 43px);overflow:auto}
+.content h2{font-size:25px;margin-top:0}
+.content button{padding:9px 13px;border:0;border-radius:8px;background:#e1e6fa;cursor:pointer;margin:4px}
+.note{width:100%;height:200px;border:1px solid #ddd;border-radius:8px;padding:12px;font:15px inherit}
+#status{position:absolute;top:40px;left:50%;transform:translateX(-50%);background:#222b;color:white;border-radius:20px;padding:8px 15px;font-size:13px;display:none;z-index:2000}
+@media(max-width:500px){#apps{right:5px;top:45px}.appicon{width:62px}.dockapp{font-size:27px}#dock{gap:6px}}
+</style>
+</head>
+<body>
+<div id="desktop">
+  <div id="menubar">
+    <div><span>●</span><b id="activeName">Finder</b><span>File</span><span>Edit</span><span>View</span><span>Go</span><span>Window</span><span>Help</span></div>
+    <div><span>◉</span><span>⌁</span><span>⌕</span><span id="clock"></span></div>
+  </div>
+  <div id="apps">
+    <button class="appicon" onclick="openApp('Finder')"><span class="emoji">🗂️</span>Finder</button>
+    <button class="appicon" onclick="openApp('Notes')"><span class="emoji">📝</span>Notes</button>
+    <button class="appicon" onclick="openApp('Safari')"><span class="emoji">🧭</span>Safari</button>
+    <button class="appicon" onclick="openApp('Settings')"><span class="emoji">⚙️</span>Settings</button>
+    <button class="appicon" onclick="openApp('About')"><span class="emoji">💻</span>About This Mac</button>
+  </div>
+  <div id="windows"></div>
+  <div id="status"></div>
+  <div id="dock">
+    <button class="dockapp" title="Finder" onclick="openApp('Finder')">🗂️</button>
+    <button class="dockapp" title="Safari" onclick="openApp('Safari')">🧭</button>
+    <button class="dockapp" title="Notes" onclick="openApp('Notes')">📝</button>
+    <button class="dockapp" title="Photos" onclick="openApp('Photos')">🌄</button>
+    <button class="dockapp" title="Settings" onclick="openApp('Settings')">⚙️</button>
+    <button class="dockapp" title="Calculator" onclick="openApp('Calculator')">🧮</button>
+    <button class="dockapp" title="About" onclick="openApp('About')">💻</button>
+  </div>
+</div>
+<script>
+const windows=document.getElementById('windows');
+const openWindows={};
+let topZ=20;
+function tell(message){
+ const s=document.getElementById('status');
+ s.textContent=message;s.style.display='block';
+ clearTimeout(window.noticeTimer);
+ window.noticeTimer=setTimeout(()=>s.style.display='none',2200);
+}
+function updateClock(){
+ document.getElementById('clock').textContent=new Date().toLocaleString([],{
+ weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'
+ });
+}
+updateClock();setInterval(updateClock,15000);
+const icons={Finder:'🗂️',Notes:'📝',Safari:'🧭',Settings:'⚙️',Photos:'🌄',Calculator:'🧮',About:'💻'};
+function appContent(name){
+ if(name==='Finder')return '<h2>Welcome to Finder</h2><p>Your little computer is ready! ✨</p><button onclick="tell(\'Your files folder is coming soon!\')">📁 Documents</button><button onclick="tell(\'Your downloads folder is coming soon!\')">⬇️ Downloads</button><button onclick="tell(\'Your pictures folder is coming soon!\')">🖼️ Pictures</button>';
+ if(name==='Notes')return '<h2>Notes</h2><p>Your notes are saved while this window is open.</p><textarea class="note" placeholder="Type your little thoughts here..."></textarea><button onclick="saveNote(this)">Save note</button>';
+ if(name==='Safari')return '<h2>Safari-style Browser</h2><p>This is a demo browser window. Open a real website in a new tab:</p><button onclick="window.open(\'https://www.google.com\',\'_blank\')">Open Google ↗</button><button onclick="window.open(\'https://vercel.com\',\'_blank\')">Open Vercel ↗</button>';
+ if(name==='Settings')return '<h2>System Settings</h2><p>Make your desktop feel like yours.</p><button onclick="document.getElementById(\'desktop\').style.background=\'linear-gradient(135deg,#111827,#374151,#64748b)\'">🌙 Dark wallpaper</button><button onclick="document.getElementById(\'desktop\').style.background=\'linear-gradient(135deg,#ffcfdf,#b0e3ff,#c7b9ff)\'">☀️ Soft wallpaper</button><button onclick="document.getElementById(\'desktop\').style.background=\'radial-gradient(ellipse at 72% 78%,#e8a6c7,transparent 30%),radial-gradient(ellipse at 25% 70%,#65b9d9,transparent 38%),radial-gradient(ellipse at 60% 25%,#6d7ce2,transparent 42%),linear-gradient(135deg,#07163d,#554b9d 55%,#e6a8c8)\'">🌈 Original wallpaper</button>';
+ if(name==='Photos')return '<h2>Photos</h2><p>Your little photo library will live here.</p>🌅 🌸 🏞️';
+ if(name==='Calculator')return '<h2>Calculator</h2><input id="calc" placeholder="Example: 2+2" style="padding:12px;width:100%;border:1px solid #ddd;border-radius:8px"><button onclick="calculate()">= Calculate</button><p id="answer"></p>';
+ return '<h2>About This Mac</h2><p style="font-size:45px">💻</p><h3>Little Mac Desktop</h3><p>A tiny Mac-inspired desktop built for the web.</p><p>This is a browser project, not macOS itself.</p>';
+}
+function openApp(name){
+ document.getElementById('activeName').textContent=name;
+ if(openWindows[name]){
+  const old=document.getElementById(openWindows[name]);
+  if(old){old.style.display='block';old.style.zIndex=++topZ;return}
+ }
+ const id='win-'+name.replace(/\W/g,'');
+ const win=document.createElement('section');
+ win.className='window';win.id=id;win.style.zIndex=++topZ;
+ const offset=Object.keys(openWindows).length*22%100;
+ win.style.marginLeft=offset+'px';win.style.marginTop=offset+'px';
+ win.innerHTML='<div class="titlebar"><button class="traffic close" title="Close"></button><button class="traffic min" title="Minimize"></button><button class="traffic zoom" title="Zoom"></button><div class="wintitle">'+icons[name]+' '+name+'</div></div><div class="content">'+appContent(name)+'</div>';
+ windows.appendChild(win);openWindows[name]=id;
+ win.addEventListener('mousedown',()=>win.style.zIndex=++topZ);
+ win.querySelector('.close').onclick=()=>{win.remove();delete openWindows[name]};
+ win.querySelector('.min').onclick=()=>win.style.display='none';
+ win.querySelector('.zoom').onclick=()=>{
+  if(win.dataset.zoomed==='yes'){
+   win.style.width='min(640px,90vw)';win.style.height='min(430px,68vh)';
+   win.style.left='50%';win.style.top='48%';win.style.transform='translate(-50%,-50%)';win.dataset.zoomed='no';
+  }else{
+   win.style.width='calc(100% - 30px)';win.style.height='calc(100% - 75px)';
+   win.style.left='15px';win.style.top='42px';win.style.transform='none';win.dataset.zoomed='yes';
+  }
+ };
+ const bar=win.querySelector('.titlebar');
+ bar.addEventListener('mousedown',e=>{
+  if(e.target.classList.contains('traffic'))return;
+  if(win.dataset.zoomed==='yes')return;
+  e.preventDefault();win.style.transform='none';
+  const rect=win.getBoundingClientRect(),sx=e.clientX-rect.left,sy=e.clientY-rect.top;
+  function move(ev){win.style.left=(ev.clientX-sx)+'px';win.style.top=(ev.clientY-sy)+'px';win.style.margin='0'}
+  function stop(){document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',stop)}
+  document.addEventListener('mousemove',move);document.addEventListener('mouseup',stop);
+ });
+}
+function saveNote(button){
+ const value=button.parentElement.querySelector('textarea').value;
+ try{localStorage.setItem('little-mac-note',value);tell('Your note is saved! 💙')}
+ catch(e){tell('Your note could not be saved in this browser.')}
+}
+function calculate(){
+ const input=document.getElementById('calc').value.trim();
+ if(!/^[\d+\-*/(). %]+$/.test(input)){tell('Please enter a simple math problem.');return}
+ try{
+  const result=Function('"use strict";return ('+input+')')();
+  document.getElementById('answer').textContent=Number.isFinite(result)?'Answer: '+result:'Please check your numbers.';
+ }catch(e){document.getElementById('answer').textContent='Please check your math.'}
+}
+document.addEventListener('keydown',e=>{
+ if(e.key==='Escape')tell('Your desktop is still here! 💙');
+});
+openApp('Finder');
+</script>
+</body>
+</html>
